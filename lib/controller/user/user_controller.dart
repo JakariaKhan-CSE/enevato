@@ -163,7 +163,7 @@ class UserController extends GetxController {
       }
       final cacheKey = 'user_items_by_site:$username';
       if (!forceRefresh) {
-        final cached = LocalCacheService.read<List<dynamic>>(
+      final cached = LocalCacheService.read<List<Map<String, dynamic>>>(
           cacheKey,
           maxAge: const Duration(minutes: 30),
         );
@@ -175,8 +175,13 @@ class UserController extends GetxController {
         }
       }
       final items = await _apiService.getUserItemsBySite(username);
-      userItems.assignAll(items); // Update the user items
-      await LocalCacheService.write(cacheKey, items);
+      final normalizedItems = items
+          .map<Map<String, dynamic>>(
+            (item) => Map<String, dynamic>.from(item as Map),
+          )
+          .toList();
+      userItems.assignAll(normalizedItems); // Update the user items
+      await LocalCacheService.write(cacheKey, normalizedItems);
       userItemsError.value = '';
     } catch (e) {
       userItemsError.value = 'Error fetching portfolio sites: $e';

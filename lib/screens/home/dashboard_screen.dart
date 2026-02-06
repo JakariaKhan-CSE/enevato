@@ -9,7 +9,7 @@ import 'package:myenvato/widget/loading_shimmer.dart';
 import 'package:myenvato/widget/userdetails/user_badge_widget.dart';
 
 class DashboardScreen extends StatefulWidget {
-  DashboardScreen({super.key});
+  const DashboardScreen({super.key});
 
   @override
   State<DashboardScreen> createState() => _DashboardScreenState();
@@ -58,6 +58,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
     super.dispose();
   }
 
+  Future<void> _refreshDashboard() async {
+    await _controller.fetchUserAccount(forceRefresh: true);
+    final username = _controller.userAccount['username']?.toString();
+    final futures = <Future<void>>[
+      if (username?.isNotEmpty ?? false)
+        _controller.fetchUserDetails(username!, forceRefresh: true),
+      _earningsController.fetchEarningsAndSalesByMonth(forceRefresh: true),
+      _statementController.fetchUserStatement(forceRefresh: true),
+    ];
+    if (futures.isNotEmpty) {
+      await Future.wait(futures);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
@@ -88,13 +102,24 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
           if (_controller.accountError.isNotEmpty) {
             final message = _controller.accountError.value;
-            return Center(
-              child: Text(
-                message,
-                style: textTheme.bodyMedium?.copyWith(
-                  color: colorScheme.error,
+            return RefreshIndicator(
+              color: colorScheme.primary,
+              onRefresh: _refreshDashboard,
+              child: SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                child: SizedBox(
+                  width: double.infinity,
+                  height: MediaQuery.of(context).size.height - 64,
+                  child: Center(
+                    child: Text(
+                      message,
+                      style: textTheme.bodyMedium?.copyWith(
+                        color: colorScheme.error,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
                 ),
-                textAlign: TextAlign.center,
               ),
             );
           }
@@ -120,11 +145,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
           final topCountries =
               _topCountries(statementSource, 5);
 
-          return SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
+          return RefreshIndicator(
+            color: colorScheme.primary,
+            onRefresh: _refreshDashboard,
+            child: SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
                   children: [
                     CircleAvatar(
                       radius: 16,
@@ -298,7 +327,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 UserBadgesWidget(username: username),
               ],
             ),
-          );
+          ));
         }),
       ),
     );

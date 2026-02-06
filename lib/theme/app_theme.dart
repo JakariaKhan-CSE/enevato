@@ -1,194 +1,268 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class AppTheme {
-  static const Color lightBackground = Color(0xFFF5FBE6);
-  static const Color primary = Color(0xFF215E61);
-  static const Color deep = Color(0xFF233D4D);
-  static const Color accent = Color(0xFFFE7F2D);
+  static const Color _brandPrimary = Color(0xFF0F1B33);
+  static const Color _brandSecondary = Color(0xFF3772FF);
+  static const Color _brandAccent = Color(0xFF00C38A);
+  static const Color _lightBackground = Colors.white;
+  static const Color _lightSurface = Colors.white;
+  static const Color _lightBorder = Color(0xFFE3E7EF);
 
-  static const Color darkBackground = Color(0xFF0E171D);
-  static const Color darkSurface = Color(0xFF14232B);
-  static const Color darkSurfaceAlt = Color(0xFF1B2B35);
+  static const Color _darkBackground = Color(0xFF080E1D);
+  static const Color _darkSurface = Color(0xFF11192A);
+  static const Color _darkSurfaceAlt = Color(0xFF1D253A);
+  static const Color _darkBorder = Color(0xFF2B3451);
+  static const Color _darkSecondary = Color(0xFF8AA6FF);
+  static const Color _darkAccent = Color(0xFF2AC7F2);
+
+  static TextTheme _textTheme(TextTheme base, Color color) {
+    TextTheme resolvedTheme = base;
+    try {
+      resolvedTheme = GoogleFonts.plusJakartaSansTextTheme(base);
+    } catch (error, stackTrace) {
+      debugPrint(
+        'google_fonts failed to load PlusJakartaSans; falling back to defaults: $error',
+      );
+      debugPrintStack(stackTrace: stackTrace);
+    }
+
+    return resolvedTheme.apply(
+      displayColor: color,
+      bodyColor: color,
+    );
+  }
 
   static ThemeData light() {
-    final ColorScheme scheme = ColorScheme(
+    final ColorScheme colorScheme = ColorScheme(
       brightness: Brightness.light,
-      primary: primary,
-      onPrimary: lightBackground,
-      secondary: accent,
-      onSecondary: deep,
-      tertiary: deep,
-      onTertiary: lightBackground,
+      primary: _brandPrimary,
+      onPrimary: Colors.white,
+      secondary: _brandSecondary,
+      onSecondary: Colors.white,
+      tertiary: _brandAccent,
+      onTertiary: Colors.white,
+      background: _lightBackground,
+      onBackground: _brandPrimary,
+      surface: _lightSurface,
+      onSurface: _brandPrimary,
       error: Colors.red.shade700,
       onError: Colors.white,
-      background: lightBackground,
-      onBackground: deep,
-      surface: Colors.white,
-      onSurface: deep,
+    );
+
+    final TextTheme textTheme =
+        _textTheme(Typography.blackMountainView, colorScheme.onBackground);
+
+    final ButtonStyle elevatedStyle = ElevatedButton.styleFrom(
+      backgroundColor: colorScheme.primary,
+      foregroundColor: colorScheme.onPrimary,
+      minimumSize: const Size.fromHeight(52),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(14),
+      ),
+      elevation: 0,
+      shadowColor: Colors.transparent,
+      textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+    );
+
+    final ButtonStyle outlinedStyle = OutlinedButton.styleFrom(
+      foregroundColor: colorScheme.primary,
+      side: BorderSide(color: colorScheme.primary.withOpacity(0.6)),
+      minimumSize: const Size.fromHeight(52),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(14),
+      ),
+      textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
     );
 
     return ThemeData(
       useMaterial3: true,
-      colorScheme: scheme,
-      scaffoldBackgroundColor: lightBackground,
-      fontFamily: 'Octarine',
-      textTheme: Typography.blackCupertino.apply(
-        fontFamily: 'Octarine',
-        bodyColor: deep,
-        displayColor: deep,
-      ),
-      appBarTheme: const AppBarTheme(
-        backgroundColor: lightBackground,
-        foregroundColor: deep,
+      colorScheme: colorScheme,
+      scaffoldBackgroundColor: _lightBackground,
+      textTheme: textTheme,
+      primaryTextTheme: textTheme,
+      appBarTheme: AppBarTheme(
+        backgroundColor: _lightSurface,
+        foregroundColor: colorScheme.primary,
         elevation: 0,
         centerTitle: true,
         surfaceTintColor: Colors.transparent,
+        shadowColor: Colors.transparent,
+        iconTheme: IconThemeData(color: colorScheme.primary),
+        titleTextStyle: textTheme.titleLarge?.copyWith(
+          fontWeight: FontWeight.w700,
+        ),
       ),
       cardTheme: CardThemeData(
-        color: Colors.white,
+        color: _lightSurface,
         elevation: 0,
         margin: const EdgeInsets.symmetric(vertical: 8),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
+          side: BorderSide(color: _lightBorder),
         ),
       ),
-      dividerTheme: DividerThemeData(color: deep.withOpacity(0.15)),
-      iconTheme: const IconThemeData(color: deep),
+      dividerTheme: DividerThemeData(
+        color: _lightBorder,
+        thickness: 1,
+      ),
+      iconTheme: IconThemeData(color: colorScheme.primary),
       bottomNavigationBarTheme: BottomNavigationBarThemeData(
-        backgroundColor: Colors.white,
-        selectedItemColor: primary,
-        unselectedItemColor: deep.withOpacity(0.5),
+        backgroundColor: _lightSurface,
+        selectedItemColor: colorScheme.primary,
+        unselectedItemColor: colorScheme.onSurface.withOpacity(0.6),
         showSelectedLabels: true,
         showUnselectedLabels: true,
         type: BottomNavigationBarType.fixed,
+        elevation: 0,
       ),
-      elevatedButtonTheme: ElevatedButtonThemeData(
-        style: ElevatedButton.styleFrom(
-          backgroundColor: primary,
-          foregroundColor: lightBackground,
-          minimumSize: const Size.fromHeight(52),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-          textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-        ),
-      ),
-      outlinedButtonTheme: OutlinedButtonThemeData(
-        style: OutlinedButton.styleFrom(
-          foregroundColor: primary,
-          side: const BorderSide(color: primary),
-          minimumSize: const Size.fromHeight(52),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-        ),
-      ),
+      elevatedButtonTheme: ElevatedButtonThemeData(style: elevatedStyle),
+      outlinedButtonTheme: OutlinedButtonThemeData(style: outlinedStyle),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: Colors.white,
+        fillColor: _lightSurface,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: deep.withOpacity(0.2)),
+          borderSide: BorderSide(color: _lightBorder),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: deep.withOpacity(0.2)),
+          borderSide: BorderSide(color: _lightBorder),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: primary, width: 2),
+          borderSide: BorderSide(color: colorScheme.primary, width: 2),
+        ),
+        labelStyle: textTheme.labelMedium,
+        hintStyle: textTheme.bodyMedium?.copyWith(
+          color: colorScheme.onSurface.withOpacity(0.6),
+        ),
+      ),
+      chipTheme: ChipThemeData(
+        backgroundColor: _lightSurface,
+        labelStyle: textTheme.labelSmall?.copyWith(
+          color: colorScheme.primary,
+          fontWeight: FontWeight.w600,
+        ),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+          side: BorderSide(color: _lightBorder),
         ),
       ),
     );
   }
 
   static ThemeData dark() {
-    final ColorScheme scheme = ColorScheme(
+    final ColorScheme colorScheme = ColorScheme(
       brightness: Brightness.dark,
-      primary: accent,
-      onPrimary: darkBackground,
-      secondary: primary,
+      primary: _darkAccent,
+      onPrimary: _darkBackground,
+      secondary: _darkSecondary,
       onSecondary: Colors.white,
-      tertiary: primary,
-      onTertiary: Colors.white,
+      tertiary: _darkAccent,
+      onTertiary: _darkBackground,
+      background: _darkBackground,
+      onBackground: Colors.white,
+      surface: _darkSurface,
+      onSurface: Colors.white,
       error: Colors.red.shade400,
       onError: Colors.white,
-      background: darkBackground,
-      onBackground: Colors.white,
-      surface: darkSurface,
-      onSurface: Colors.white,
+    );
+
+    final TextTheme textTheme =
+        _textTheme(Typography.whiteMountainView, colorScheme.onBackground);
+
+    final ButtonStyle elevatedStyle = ElevatedButton.styleFrom(
+      backgroundColor: colorScheme.secondary,
+      foregroundColor: colorScheme.onSecondary,
+      minimumSize: const Size.fromHeight(52),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(14),
+      ),
+      elevation: 0,
+      shadowColor: Colors.transparent,
+      textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+    );
+
+    final ButtonStyle outlinedStyle = OutlinedButton.styleFrom(
+      foregroundColor: Colors.white70,
+      side: BorderSide(color: colorScheme.onSurface.withOpacity(0.3)),
+      minimumSize: const Size.fromHeight(52),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(14),
+      ),
+      textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
     );
 
     return ThemeData(
       useMaterial3: true,
-      colorScheme: scheme,
-      scaffoldBackgroundColor: darkBackground,
-      fontFamily: 'Octarine',
-      textTheme: Typography.whiteCupertino.apply(
-        fontFamily: 'Octarine',
-        bodyColor: Colors.white,
-        displayColor: Colors.white,
-      ),
-      appBarTheme: const AppBarTheme(
-        backgroundColor: darkBackground,
+      colorScheme: colorScheme,
+      scaffoldBackgroundColor: _darkBackground,
+      textTheme: textTheme,
+      primaryTextTheme: textTheme,
+      appBarTheme: AppBarTheme(
+        backgroundColor: _darkBackground,
         foregroundColor: Colors.white,
         elevation: 0,
         centerTitle: true,
         surfaceTintColor: Colors.transparent,
+        iconTheme: const IconThemeData(color: Colors.white),
+        titleTextStyle: textTheme.titleLarge?.copyWith(
+          fontWeight: FontWeight.w700,
+        ),
       ),
       cardTheme: CardThemeData(
-        color: darkSurface,
-        elevation: 0,
+        color: _darkSurface,
+        elevation: 2,
         margin: const EdgeInsets.symmetric(vertical: 8),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
         ),
       ),
-      dividerTheme: DividerThemeData(color: Colors.white.withOpacity(0.12)),
+      dividerTheme: DividerThemeData(
+        color: Colors.white.withOpacity(0.12),
+        thickness: 1,
+      ),
       iconTheme: const IconThemeData(color: Colors.white),
       bottomNavigationBarTheme: BottomNavigationBarThemeData(
-        backgroundColor: darkSurfaceAlt,
-        selectedItemColor: accent,
+        backgroundColor: _darkSurfaceAlt,
+        selectedItemColor: colorScheme.secondary,
         unselectedItemColor: Colors.white60,
         showSelectedLabels: true,
         showUnselectedLabels: true,
         type: BottomNavigationBarType.fixed,
       ),
-      elevatedButtonTheme: ElevatedButtonThemeData(
-        style: ElevatedButton.styleFrom(
-          backgroundColor: accent,
-          foregroundColor: darkBackground,
-          minimumSize: const Size.fromHeight(52),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-          textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-        ),
-      ),
-      outlinedButtonTheme: OutlinedButtonThemeData(
-        style: OutlinedButton.styleFrom(
-          foregroundColor: Colors.white,
-          side: const BorderSide(color: Colors.white30),
-          minimumSize: const Size.fromHeight(52),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-        ),
-      ),
+      elevatedButtonTheme: ElevatedButtonThemeData(style: elevatedStyle),
+      outlinedButtonTheme: OutlinedButtonThemeData(style: outlinedStyle),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: darkSurfaceAlt,
+        fillColor: _darkSurfaceAlt,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Colors.white24),
+          borderSide: BorderSide(color: _darkBorder),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Colors.white24),
+          borderSide: BorderSide(color: _darkBorder),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: accent, width: 2),
+          borderSide: BorderSide(color: colorScheme.secondary, width: 2),
+        ),
+        labelStyle: textTheme.labelMedium,
+        hintStyle: textTheme.bodyMedium?.copyWith(
+          color: Colors.white70,
+        ),
+      ),
+      chipTheme: ChipThemeData(
+        backgroundColor: Colors.white12,
+        labelStyle: textTheme.labelSmall?.copyWith(
+          color: Colors.white,
+          fontWeight: FontWeight.w600,
+        ),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+          side: BorderSide(color: Colors.white12),
         ),
       ),
     );

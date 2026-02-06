@@ -47,12 +47,12 @@ class EarningsController extends GetxController {
         return;
       }
       if (!forceRefresh) {
-        final cached = LocalCacheService.read<List<dynamic>>(
+        final cached = LocalCacheService.read<List<Map<String, dynamic>>>(
           'earnings_by_month',
           maxAge: const Duration(minutes: 10),
         );
         if (cached != null) {
-          earningsList.value = List<Map<String, dynamic>>.from(cached);
+          earningsList.value = cached;
           errorMessage.value = '';
           return;
         }
@@ -63,8 +63,13 @@ class EarningsController extends GetxController {
         return;
       }
       final earnings = await ApiService().getEarningsAndSalesByMonth();
-      earningsList.value = earnings;
-      await LocalCacheService.write('earnings_by_month', earnings);
+      final normalizedEarnings = earnings
+          .map<Map<String, dynamic>>(
+            (entry) => Map<String, dynamic>.from(entry as Map),
+          )
+          .toList();
+      earningsList.value = normalizedEarnings;
+      await LocalCacheService.write('earnings_by_month', normalizedEarnings);
       errorMessage.value = ''; // Clear any previous error messages
     } catch (e) {
       errorMessage.value = 'Error fetching earnings data: $e'; // Handle any errors

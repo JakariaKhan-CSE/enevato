@@ -7,10 +7,20 @@ import 'package:get/get.dart';
 import 'package:myenvato/extension/app_translations.dart';
 import 'package:myenvato/screens/splash_screen.dart';
 import 'package:myenvato/services/local_cache_service.dart';
-import 'package:myenvato/services/home_widget_service.dart';
 import 'package:myenvato/theme/app_theme.dart';
+import 'package:myenvato/widget/app_lifecycle_handler.dart';
 import 'package:myenvato/widget/loading_shimmer.dart';
 import 'package:toastification/toastification.dart';
+
+class _NoGlowScrollBehavior extends MaterialScrollBehavior {
+  const _NoGlowScrollBehavior();
+
+  @override
+  Widget buildOverscrollIndicator(
+      BuildContext context, Widget child, ScrollableDetails details) {
+    return child;
+  }
+}
 
 void main() async {
   // Ensure flutter bindings are initialized
@@ -53,19 +63,22 @@ class MyApp extends StatelessWidget {
         splitScreenMode: true,
         builder: (context, child) {
           return ToastificationWrapper(
-            child: GetMaterialApp(
-              initialBinding: Binding(),
-              translations: AppTranslations(),
-              locale: languageController.initialLocale, // Use loaded locale
-              fallbackLocale: const Locale('en', 'US'),
-              debugShowCheckedModeBanner: false,
-              title: 'Evacado Tracker',
-              theme: AppTheme.light(),
-              darkTheme: AppTheme.dark(),
-              themeMode: ThemeMode.system,
-              defaultTransition: Transition.fadeIn,
-              transitionDuration: const Duration(milliseconds: 280),
-              home: const SplashScreen(),
+            child: AppLifecycleHandler(
+              child: GetMaterialApp(
+                initialBinding: Binding(),
+                translations: AppTranslations(),
+                locale: languageController.initialLocale, // Use loaded locale
+                fallbackLocale: const Locale('en', 'US'),
+                debugShowCheckedModeBanner: false,
+                title: 'Evacado Tracker',
+                scrollBehavior: const _NoGlowScrollBehavior(),
+                theme: AppTheme.light(),
+                darkTheme: AppTheme.dark(),
+                themeMode: ThemeMode.system,
+                defaultTransition: Transition.fadeIn,
+                transitionDuration: const Duration(milliseconds: 280),
+                home: const SplashScreen(),
+              ),
             ),
           );
         },

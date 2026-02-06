@@ -26,7 +26,31 @@ class LocalCacheService {
         return null;
       }
     }
-    return entry['data'] as T?;
+    return _convertData<T>(entry['data']);
+  }
+
+  static T? _convertData<T>(dynamic data) {
+    if (data == null) {
+      return null;
+    }
+
+    if (T == Map<String, dynamic>) {
+      if (data is Map) {
+        return Map<String, dynamic>.from(data) as T;
+      }
+    }
+
+    if (T == List<Map<String, dynamic>>) {
+      if (data is List) {
+        return data
+            .map<Map<String, dynamic>>(
+              (item) => Map<String, dynamic>.from(item as Map),
+            )
+            .toList() as T;
+      }
+    }
+
+    return data as T;
   }
 
   static Future<void> write(String key, dynamic data) async {

@@ -8,6 +8,8 @@ import 'package:myenvato/widget/loading_shimmer.dart';
 class EarningsScreen extends StatelessWidget {
   final EarningsController earningsController = Get.put(EarningsController());
 
+   EarningsScreen({super.key});
+
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
@@ -22,11 +24,47 @@ class EarningsScreen extends StatelessWidget {
         }
 
         if (earningsController.errorMessage.isNotEmpty) {
-          return Center(child: Text(earningsController.errorMessage.value));
+          return RefreshIndicator(
+            color: colorScheme.primary,
+            onRefresh: () => earningsController.fetchEarningsAndSalesByMonth(
+              forceRefresh: true,
+            ),
+            child: SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 80),
+                child: Column(
+                  children: [
+                    Icon(
+                      Icons.refresh,
+                      size: 44,
+                      color: colorScheme.primary,
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      earningsController.errorMessage.value,
+                      textAlign: TextAlign.center,
+                      style: textTheme.bodyMedium?.copyWith(
+                        color: colorScheme.onSurface.withOpacity(0.7),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      'Pull down to load again.',
+                      style: textTheme.bodySmall?.copyWith(
+                        color: colorScheme.onSurface.withOpacity(0.6),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
         }
 
-        // Group earnings by year and month
+        // Group earnings by year/month and flatten for charting
         Map<int, Map<String, List<Map<String, dynamic>>>> groupedEarnings = {};
+        final List<_MonthlyPoint> monthlyPoints = [];
 
         for (var item in earningsController.earningsList) {
           final String dateString = item['month'];
@@ -43,23 +81,39 @@ class EarningsScreen extends StatelessWidget {
             continue; // Skip invalid dates
           }
 
-          int year = parsedDate.year;
-          String month = DateFormat('MMMM').format(parsedDate);
+          final int salesValue = (item['sales'] as num?)?.toInt() ?? 0;
+          final double earningsValue =
+              (item['earnings'] as num?)?.toDouble() ?? 0.0;
+          final String monthLabel = DateFormat('MMMM').format(parsedDate);
 
-          // Initialize the map if it doesn't exist
-          if (!groupedEarnings.containsKey(year)) {
-            groupedEarnings[year] = {};
+          monthlyPoints.add(
+            _MonthlyPoint(
+              date: parsedDate,
+              sales: salesValue,
+              earnings: earningsValue,
+              monthLabel: monthLabel,
+            ),
+          );
+
+          if (!groupedEarnings.containsKey(parsedDate.year)) {
+            groupedEarnings[parsedDate.year] = {};
           }
-
-          if (!groupedEarnings[year]!.containsKey(month)) {
-            groupedEarnings[year]![month] = [];
-          }
-
-          // Add the earnings item to the respective month
-          groupedEarnings[year]![month]!.add({
-            'sales': item['sales'],
-            'earnings': item['earnings'],
+          groupedEarnings[parsedDate.year]!.putIfAbsent(monthLabel, () => []);
+          groupedEarnings[parsedDate.year]![monthLabel]!.add({
+            'sales': salesValue,
+            'earnings': earningsValue,
           });
+        }
+
+        if (monthlyPoints.isEmpty) {
+          return Center(
+            child: Text(
+              'No earnings data yet.',
+              style: textTheme.bodyMedium?.copyWith(
+                color: colorScheme.onSurface.withOpacity(0.6),
+              ),
+            ),
+          );
         }
 
         // Create a list of years sorted
@@ -98,7 +152,7 @@ class EarningsScreen extends StatelessWidget {
                 BarChartRodData(
                   toY: totalEarningsByYear[year]!,
                   color: colorScheme.primary,
-                  width: 18,
+                  width: 14,
                   borderRadius: BorderRadius.circular(6),
                 ),
               ],
@@ -110,8 +164,47 @@ class EarningsScreen extends StatelessWidget {
         double overallAverageEarnings =
             totalEntries > 0 ? overallTotalEarnings / totalEntries : 0;
 
-        return SingleChildScrollView(
-          child: Column(
+        monthlyPoints.sort((a, b) => a.date.compareTo(b.date));
+        final _MonthlyPoint highestEarningMonth = monthlyPoints.reduce(
+          (prev, next) => next.earnings > prev.earnings ? next : prev,
+        );
+        final _MonthlyPoint busiestMonth = monthlyPoints.reduce(
+          (prev, next) => next.sales > prev.sales ? next : prev,
+        );
+        final double latestYearEarnings = totalEarningsByYear[years.first]!;
+        final double priorYearEarnings =
+            years.length > 1 ? totalEarningsByYear[years[1]]! : 0;
+        final double yoyGrowth = priorYearEarnings > 0
+            ? (latestYearEarnings - priorYearEarnings) / priorYearEarnings * 100
+            : 0;
+
+        final List<FlSpot> trendSpots = monthlyPoints
+            .asMap()
+            .entries
+            .map((entry) => FlSpot(
+                  entry.key.toDouble(),
+                  entry.value.earnings,
+                ))
+            .toList();
+        final List<String> trendLabels = monthlyPoints
+            .map((item) => DateFormat('MMM yy').format(item.date))
+            .toList();
+
+        Widget content;
+        if (monthlyPoints.isEmpty) {
+          content = Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 100),
+            child: Text(
+              'No earnings data yet.',
+              textAlign: TextAlign.center,
+              style: textTheme.bodyMedium?.copyWith(
+                color: colorScheme.onSurface.withOpacity(0.6),
+              ),
+            ),
+          );
+        } else {
+          content = Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
@@ -135,125 +228,251 @@ class EarningsScreen extends StatelessWidget {
                   ],
                 ),
               ),
-
-              // Bar chart widget
               Padding(
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                child: SizedBox(
+                  height: 150,
+                  child: ListView(
+                    padding: const EdgeInsets.symmetric(vertical: 4),
+                    scrollDirection: Axis.horizontal,
+                    children: [
+                      _HighlightCard(
+                        title: 'Best Month',
+                        value:
+                            '${highestEarningMonth.monthLabel} • \$${highestEarningMonth.earnings.toStringAsFixed(2)}',
+                        trail: '${highestEarningMonth.sales} sales',
+                        icon: Icons.trending_up,
+                        highlight: true,
+                      ),
+                      _HighlightCard(
+                        title: 'Most Sales',
+                        value:
+                            '${busiestMonth.monthLabel} • ${busiestMonth.sales} sales',
+                        trail:
+                            '\$${busiestMonth.earnings.toStringAsFixed(2)}',
+                        icon: Icons.bar_chart,
+                        highlight: false,
+                      ),
+                      _HighlightCard(
+                        title: 'Year over Year',
+                        value: '${yoyGrowth.toStringAsFixed(1)}%',
+                        trail: years.length > 1
+                            ? '${years[0]} vs ${years[1]}'
+                            : 'First year recorded',
+                        icon: Icons.timeline,
+                        highlight: yoyGrowth >= 0,
+                      ),
+                    ]
+                        .map(
+                          (card) => Padding(
+                            padding: const EdgeInsets.only(right: 12),
+                            child: card,
+                          ),
+                        )
+                        .toList(),
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                child: Text(
+                  'Monthly overview',
+                  style: textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 6, 16, 16),
                 child: Card(
                   child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: AspectRatio(
-                      aspectRatio: 2.6,
-                      child: BarChart(
-                        BarChartData(
-                          gridData: FlGridData(
-                            drawHorizontalLine: true,
-                            drawVerticalLine: false,
-                            getDrawingHorizontalLine: (value) => FlLine(
-                              color: colorScheme.onSurface.withOpacity(0.12),
-                              strokeWidth: 1,
-                              dashArray: [6, 6],
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 24,
+                    ),
+                    child: Column(
+                      children: [
+                        SizedBox(
+                          height: 160,
+                          child: LineChart(
+                            LineChartData(
+                              minY: 0,
+                              titlesData: FlTitlesData(
+                                topTitles:
+                                    AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                                rightTitles:
+                                    AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                                leftTitles: AxisTitles(
+                                  sideTitles: SideTitles(
+                                    showTitles: true,
+                                    getTitlesWidget: (value, meta) {
+                                      return Text(
+                                        value.toInt().toString(),
+                                        style: textTheme.bodySmall?.copyWith(
+                                          color: colorScheme.onSurface.withOpacity(0.5),
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                ),
+                                bottomTitles: AxisTitles(
+                                  sideTitles: SideTitles(
+                                    showTitles: true,
+                                    reservedSize: 28,
+                                    getTitlesWidget: (value, meta) {
+                                      final index = value.toInt();
+                                      if (index < 0 || index >= trendLabels.length) {
+                                        return const SizedBox();
+                                      }
+                                      return Padding(
+                                        padding: const EdgeInsets.only(top: 8.0),
+                                        child: Text(
+                                          trendLabels[index],
+                                          style: textTheme.bodySmall?.copyWith(
+                                            color: colorScheme.onSurface.withOpacity(0.6),
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                ),
+                              ),
+                              gridData: FlGridData(
+                                drawHorizontalLine: true,
+                                drawVerticalLine: false,
+                                getDrawingHorizontalLine: (value) => FlLine(
+                                  color: colorScheme.onSurface.withOpacity(0.08),
+                                  strokeWidth: 1,
+                                  dashArray: [4, 4],
+                                ),
+                              ),
+                              borderData: FlBorderData(show: false),
+                              lineBarsData: [
+                                LineChartBarData(
+                                  spots: trendSpots,
+                                  color: colorScheme.primary,
+                                  barWidth: 3,
+                                  isCurved: true,
+                                  dotData: FlDotData(show: false),
+                                  belowBarData: BarAreaData(
+                                    show: true,
+                                    color: colorScheme.primary.withOpacity(0.2),
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
-                          titlesData: FlTitlesData(
-                            rightTitles: AxisTitles(
-                              sideTitles: SideTitles(showTitles: false),
-                            ),
-                            topTitles: AxisTitles(
-                              sideTitles: SideTitles(showTitles: false),
-                            ),
-                            leftTitles: AxisTitles(
-                              sideTitles: SideTitles(
-                                showTitles: true,
-                                reservedSize: 34,
-                                getTitlesWidget: (value, meta) {
-                                  return Text(
-                                    value.toInt().toString(),
-                                    style: textTheme.bodySmall?.copyWith(
-                                      color: colorScheme.onSurface.withOpacity(0.6),
-                                    ),
-                                  );
-                                },
-                              ),
-                            ),
-                            bottomTitles: AxisTitles(
-                              sideTitles: SideTitles(
-                                showTitles: true,
-                                reservedSize: 32,
-                                getTitlesWidget: (value, meta) {
-                                  return Padding(
-                                    padding: const EdgeInsets.only(top: 8.0),
-                                    child: Text(
-                                      value.toInt().toString(),
-                                      style: textTheme.bodySmall?.copyWith(
-                                        color: colorScheme.onSurface.withOpacity(0.7),
-                                      ),
-                                    ),
-                                  );
-                                },
-                              ),
-                            ),
-                          ),
-                          borderData: FlBorderData(show: false),
-                          barGroups: barGroups,
                         ),
-                      ),
+                        const SizedBox(height: 12),
+                        Align(
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            'Trend across last ${trendLabels.length} months',
+                            style: textTheme.bodySmall?.copyWith(
+                              color: colorScheme.onSurface.withOpacity(0.6),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
               ),
-
-              // Earnings grouped by year and month
-              ListView.builder(
-                shrinkWrap: true,
-                physics: NeverScrollableScrollPhysics(),
-                itemCount: years.length,
-                itemBuilder: (context, yearIndex) {
-                  int year = years[yearIndex];
-                  Map<String, List<Map<String, dynamic>>> months =
-                      groupedEarnings[year]!;
-
-                  return Card(
-                    margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    child: ExpansionTile(
-                      title: Text(
-                        '$year',
-                        style: textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w700,
+              const SizedBox(height: 8),
+              Column(
+                children: years.map((year) {
+                  final months = groupedEarnings[year]!;
+                  final yearTotal = totalEarningsByYear[year]!;
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                    child: Card(
+                      margin: EdgeInsets.zero,
+                      clipBehavior: Clip.hardEdge,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Theme(
+                        data: Theme.of(context).copyWith(
+                          dividerColor: Colors.transparent,
+                        ),
+                        child: ExpansionTile(
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          collapsedShape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                          title: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                '$year',
+                                style: textTheme.titleMedium?.copyWith(
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                              Text(
+                                '\$${yearTotal.toStringAsFixed(2)}',
+                                style: textTheme.bodyMedium?.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                          iconColor: colorScheme.primary,
+                          collapsedIconColor: colorScheme.onSurface.withOpacity(0.6),
+                          backgroundColor: Colors.transparent,
+                          collapsedBackgroundColor: Colors.transparent,
+                          childrenPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                          children: months.entries.map((entry) {
+                            final earningsSum = entry.value.fold<double>(
+                              0,
+                              (previousValue, element) =>
+                                  previousValue + (element['earnings'] as double),
+                            );
+                            final salesSum = entry.value.fold<int>(
+                              0,
+                              (previousValue, element) =>
+                                  previousValue + (element['sales'] as int),
+                            );
+                            return Padding(
+                              padding: const EdgeInsets.only(bottom: 12),
+                              child: _MonthChip(
+                                month: entry.key,
+                                sales: salesSum,
+                                earnings: earningsSum,
+                                maxEarnings:
+                                    months.values.expand((items) => items).fold<double>(
+                                          0,
+                                          (prev, element) =>
+                                              prev + (element['earnings'] as double),
+                                        ),
+                                primaryColor: colorScheme.primary,
+                                onSurfaceColor:
+                                    colorScheme.onSurface.withOpacity(0.6),
+                              ),
+                            );
+                          }).toList(),
                         ),
                       ),
-                      iconColor: colorScheme.primary,
-                      collapsedIconColor: colorScheme.onSurface.withOpacity(0.6),
-                      children: months.entries.map((entry) {
-                        String month = entry.key;
-                        List<Map<String, dynamic>> items = entry.value;
-
-                        return Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                          child: ListTile(
-                            title: Text(
-                              month,
-                              style: textTheme.titleSmall,
-                            ),
-                            subtitle: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: items.map((item) {
-                                return Text(
-                                  'Sales: ${item['sales']}, Earnings: \$${item['earnings']}',
-                                  style: textTheme.bodySmall?.copyWith(
-                                    color: colorScheme.onSurface.withOpacity(0.6),
-                                  ),
-                                );
-                              }).toList(),
-                            ),
-                          ),
-                        );
-                      }).toList(),
                     ),
                   );
-                },
+                }).toList(),
               ),
+              const SizedBox(height: 40),
             ],
+          );
+        }
+
+        return RefreshIndicator(
+          color: colorScheme.primary,
+          onRefresh: () => earningsController.fetchEarningsAndSalesByMonth(
+            forceRefresh: true,
+          ),
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            child: content,
           ),
         );
       }),
@@ -300,4 +519,189 @@ class _StatCard extends StatelessWidget {
       ),
     );
   }
+}
+
+class _HighlightCard extends StatelessWidget {
+  final String title;
+  final String value;
+  final String trail;
+  final IconData icon;
+  final bool highlight;
+
+  const _HighlightCard({
+    required this.title,
+    required this.value,
+    required this.trail,
+    required this.icon,
+    required this.highlight,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+    return Material(
+      elevation: highlight ? 4 : 0,
+      borderRadius: BorderRadius.circular(16),
+      color: highlight ? colorScheme.primary.withOpacity(0.1) : null,
+      child: Container(
+        width: 180,
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          border: Border.all(
+            color: highlight
+                ? colorScheme.primary.withOpacity(0.3)
+                : colorScheme.onSurface.withOpacity(0.12),
+          ),
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            CircleAvatar(
+              radius: 18,
+              backgroundColor: highlight
+                  ? colorScheme.primary.withOpacity(0.2)
+                  : colorScheme.onSurface.withOpacity(0.08),
+              child: Icon(
+                icon,
+                color: highlight
+                    ? colorScheme.primary
+                    : colorScheme.onSurface.withOpacity(0.7),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: textTheme.labelMedium?.copyWith(
+                      color: colorScheme.onSurface.withOpacity(0.8),
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    value,
+                    style: textTheme.bodyLarge?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    trail,
+                    style: textTheme.bodySmall?.copyWith(
+                      color: colorScheme.onSurface.withOpacity(0.6),
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _MonthChip extends StatelessWidget {
+  final String month;
+  final int sales;
+  final double earnings;
+  final double maxEarnings;
+  final Color primaryColor;
+  final Color onSurfaceColor;
+
+  const _MonthChip({
+    required this.month,
+    required this.sales,
+    required this.earnings,
+    required this.maxEarnings,
+    required this.primaryColor,
+    required this.onSurfaceColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    final progress = maxEarnings == 0 ? 0.0 : (earnings / maxEarnings).clamp(0.0, 1.0);
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: onSurfaceColor),
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.02),
+            blurRadius: 6,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.all(12),
+      child: Row(
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: primaryColor.withOpacity(0.12),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            alignment: Alignment.center,
+            child: Text(
+              month.substring(0, 3),
+              style: textTheme.labelLarge?.copyWith(
+                fontWeight: FontWeight.w700,
+                color: primaryColor,
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  month,
+                  style: textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                Text(
+                  '$sales sales • \$${earnings.toStringAsFixed(2)}',
+                  style: textTheme.bodySmall?.copyWith(
+                    color: onSurfaceColor,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                LinearProgressIndicator(
+                  value: progress,
+                  color: primaryColor,
+                  backgroundColor: primaryColor.withOpacity(0.15),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MonthlyPoint {
+  final DateTime date;
+  final int sales;
+  final double earnings;
+  final String monthLabel;
+
+  _MonthlyPoint({
+    required this.date,
+    required this.sales,
+    required this.earnings,
+    required this.monthLabel,
+  });
 }

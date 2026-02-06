@@ -36,39 +36,47 @@ class _BottomNavScreenState extends State<BottomNavScreen> {
         );
       }),
       bottomNavigationBar: Obx(() {
-        return BottomNavigationBar(
-          type: BottomNavigationBarType.fixed,
-          backgroundColor:
-              Theme.of(context).bottomNavigationBarTheme.backgroundColor,
-          currentIndex: _navController.currentIndex.value,
-          selectedItemColor: colorScheme.primary,
-          unselectedItemColor: colorScheme.onSurface.withOpacity(0.6),
-          onTap: (index) {
-            _navController.changeTabIndex(index);
-          },
-          items: const [
-            BottomNavigationBarItem(
-              icon: Icon(Icons.dashboard),
-              label: 'Home',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.attach_money),
-              label: 'Earns',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.receipt_long),
-              label: 'Invoice',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.work),
-              label: 'Items',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.settings),
-              label: 'Profile',
-            ),
-          ],
-          showUnselectedLabels: true,
+        return Theme(
+          data: Theme.of(context).copyWith(
+            splashFactory: NoSplash.splashFactory,
+            highlightColor: Colors.transparent,
+            splashColor: Colors.transparent,
+          ),
+          child: BottomNavigationBar(
+            type: BottomNavigationBarType.fixed,
+            backgroundColor:
+                Theme.of(context).bottomNavigationBarTheme.backgroundColor,
+            enableFeedback: false,
+            currentIndex: _navController.currentIndex.value,
+            selectedItemColor: colorScheme.primary,
+            unselectedItemColor: colorScheme.onSurface.withOpacity(0.6),
+            onTap: (index) {
+              _navController.changeTabIndex(index);
+            },
+            items: const [
+              BottomNavigationBarItem(
+                icon: Icon(Icons.dashboard),
+                label: 'Home',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.attach_money),
+                label: 'Earns',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.receipt_long),
+                label: 'Invoice',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.work),
+                label: 'Items',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.settings),
+                label: 'Profile',
+              ),
+            ],
+            showUnselectedLabels: true,
+          ),
         );
       }),
     );

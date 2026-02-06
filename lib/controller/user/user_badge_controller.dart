@@ -25,12 +25,12 @@ class BadgeController extends GetxController {
       }
       final cacheKey = 'user_badges:$username';
       if (!forceRefresh) {
-        final cached = LocalCacheService.read<List<dynamic>>(
+        final cached = LocalCacheService.read<List<Map<String, dynamic>>>(
           cacheKey,
           maxAge: const Duration(hours: 6),
         );
         if (cached != null) {
-          badges.value = List<Map<String, dynamic>>.from(cached);
+          badges.value = cached;
           errorMessage.value = '';
           isLoading(false);
           return;
@@ -42,8 +42,13 @@ class BadgeController extends GetxController {
         return;
       }
       var fetchedBadges = await _apiService.getUserBadges(username);
-      badges.value = List<Map<String, dynamic>>.from(fetchedBadges);
-      await LocalCacheService.write(cacheKey, fetchedBadges);
+      final normalizedBadges = fetchedBadges
+          .map<Map<String, dynamic>>(
+            (badge) => Map<String, dynamic>.from(badge as Map),
+          )
+          .toList();
+      badges.value = normalizedBadges;
+      await LocalCacheService.write(cacheKey, normalizedBadges);
       errorMessage.value = '';
     } catch (e) {
       print("Error fetching badges: $e");

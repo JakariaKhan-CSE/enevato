@@ -123,54 +123,55 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
                   );
                 }
 
-                return Card(
-                  child: ListView.separated(
-                    itemCount: sites.length,
-                    separatorBuilder: (_, __) => Divider(
-                      height: 1,
-                      color: colorScheme.onSurface.withOpacity(0.08),
-                    ),
-                    itemBuilder: (context, index) {
-                      final site = sites[index];
-                      final label = site['site']?.toString() ?? 'Unknown';
-                      final count =
-                          int.tryParse(site['items']?.toString() ?? '') ?? 0;
-                      return ListTile(
-                        leading: CircleAvatar(
-                          backgroundColor: colorScheme.primary.withOpacity(0.15),
-                          child: Text(
-                            label.isNotEmpty ? label.substring(0, 1) : '?',
-                            style: textTheme.labelLarge?.copyWith(
-                              color: colorScheme.primary,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        ),
-                        title: Text(
-                          label,
-                          style: textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        subtitle: Text(
-                          _formatCount(count),
-                          style: textTheme.bodySmall?.copyWith(
-                            color: colorScheme.onSurface.withOpacity(0.6),
-                          ),
-                        ),
-                        trailing: Icon(Icons.chevron_right,
-                            color: colorScheme.onSurface.withOpacity(0.6)),
-                        onTap: () {
-                          Get.to(
-                            () => PortfolioSiteScreen(
-                              siteLabel: label,
-                              siteParam: _siteParam(label),
-                            ),
-                          );
-                        },
-                      );
-                    },
+                return ListView.separated(
+                  padding: EdgeInsets.zero,
+                  itemCount: sites.length,
+                  separatorBuilder: (_, __) => Divider(
+                    height: 1,
+                    color: colorScheme.onSurface.withOpacity(0.08),
                   ),
+                  itemBuilder: (context, index) {
+                    final site = sites[index];
+                    final label = site['site']?.toString() ?? 'Unknown';
+                    final count =
+                        int.tryParse(site['items']?.toString() ?? '') ?? 0;
+                    return ListTile(
+                      leading: CircleAvatar(
+                        backgroundColor: colorScheme.primary.withOpacity(0.15),
+                        child: Text(
+                          label.isNotEmpty ? label.substring(0, 1) : '?',
+                          style: textTheme.labelLarge?.copyWith(
+                            color: colorScheme.primary,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                      title: Text(
+                        label,
+                        style: textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      subtitle: Text(
+                        _formatCount(count),
+                        style: textTheme.bodySmall?.copyWith(
+                          color: colorScheme.onSurface.withOpacity(0.6),
+                        ),
+                      ),
+                      trailing: Icon(
+                        Icons.chevron_right,
+                        color: colorScheme.onSurface.withOpacity(0.6),
+                      ),
+                      onTap: () {
+                        Get.to(
+                          () => PortfolioSiteScreen(
+                            siteLabel: label,
+                            siteParam: _siteParam(label),
+                          ),
+                        );
+                      },
+                    );
+                  },
                 );
               }),
             ),
