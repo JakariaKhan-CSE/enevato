@@ -628,11 +628,14 @@ class _MonthChip extends StatelessWidget {
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
     final progress = maxEarnings == 0 ? 0.0 : (earnings / maxEarnings).clamp(0.0, 1.0);
+    final colorScheme = Theme.of(context).colorScheme;
+    final backgroundColor = colorScheme.surface;
+    final textColor = colorScheme.onSurface;
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: onSurfaceColor),
-        color: Colors.white,
+        color: backgroundColor,
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.02),
@@ -669,6 +672,7 @@ class _MonthChip extends StatelessWidget {
                   month,
                   style: textTheme.titleSmall?.copyWith(
                     fontWeight: FontWeight.w600,
+                    color: textColor,
                   ),
                 ),
                 Text(
