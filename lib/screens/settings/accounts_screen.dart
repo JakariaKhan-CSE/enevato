@@ -5,6 +5,7 @@ import 'package:myenvato/controller/user/user_controller.dart';
 import 'package:myenvato/screens/auth/sign_in_screen.dart';
 import 'package:myenvato/screens/home/bottom_nav_screen.dart';
 import 'package:myenvato/widget/loading_shimmer.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class AccountsScreen extends StatefulWidget {
   const AccountsScreen({super.key});
@@ -14,6 +15,8 @@ class AccountsScreen extends StatefulWidget {
 }
 
 class _AccountsScreenState extends State<AccountsScreen> {
+  static final Uri _deleteAccountUri =
+      Uri.parse('https://help.market.envato.com/hc/en-us/requests/new');
   final AuthController _authController = Get.find<AuthController>();
   final UserController _userController = Get.find<UserController>();
   late final Worker _accountWorker;
@@ -39,6 +42,60 @@ class _AccountsScreenState extends State<AccountsScreen> {
   void dispose() {
     _accountWorker.dispose();
     super.dispose();
+  }
+
+  Future<void> _openDeleteAccountPage() async {
+    final launched = await launchUrl(
+      _deleteAccountUri,
+      mode: LaunchMode.externalApplication,
+    );
+    if (!launched && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Could not open the account deletion page.'),
+        ),
+      );
+    }
+  }
+
+  Future<void> _confirmDeleteAccount() async {
+    final colorScheme = Theme.of(context).colorScheme;
+    final shouldContinue = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text('Delete account'),
+          content: const Text(
+            'Your Envato account is permanently deleted through Envato support. '
+            'Continue to the account deletion request page?',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              style: TextButton.styleFrom(
+                foregroundColor: colorScheme.error,
+              ),
+              child: const Text('Continue'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (shouldContinue != true) {
+      return;
+    }
+
+    await _openDeleteAccountPage();
+    await _authController.signOut();
+    await _authController.disableDemo();
+    if (mounted) {
+      Get.offAll(() => SignInScreen());
+    }
   }
 
   @override
@@ -221,7 +278,7 @@ class _AccountsScreenState extends State<AccountsScreen> {
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
               child: Text(
-                'Swipe left an unselected account to delete it.',
+                'Use "Delete account" to open Envato\'s account deletion page.',
                 style: textTheme.bodySmall?.copyWith(
                   color: colorScheme.onSurface.withOpacity(0.6),
                 ),
@@ -244,6 +301,26 @@ class _AccountsScreenState extends State<AccountsScreen> {
                         Get.offAll(() => SignInScreen());
                       }
                     },
+                  ),
+                  Divider(
+                    height: 1,
+                    color: colorScheme.onSurface.withOpacity(0.08),
+                  ),
+                  ListTile(
+                    title: Text(
+                      'Delete account',
+                      style: textTheme.titleMedium?.copyWith(
+                        color: colorScheme.error,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    subtitle: Text(
+                      'Permanently delete your Envato account',
+                      style: textTheme.bodySmall?.copyWith(
+                        color: colorScheme.onSurface.withOpacity(0.6),
+                      ),
+                    ),
+                    onTap: _confirmDeleteAccount,
                   ),
                   Divider(
                     height: 1,
