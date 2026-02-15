@@ -1,0 +1,1 @@
+ /Users/jakaria/StudioProjects/evacado_sales_tracker/.dart_tool/flutter_build/228253fdf064aea9f66d90d4a1006ccb/dart_build_result.json:  /Users/jakaria/StudioProjects/evacado_sales_tracker/.dart_tool/package_config.json /Users/jakaria/StudioProjects/evacado_sales_tracker/pubspec.yaml /Users/jakaria/develop/flutter/bin/cache/dart-sdk/version

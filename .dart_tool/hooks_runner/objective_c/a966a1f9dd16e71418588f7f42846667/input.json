@@ -1,0 +1,29 @@
+{
+  "assets": {},
+  "config": {
+    "build_asset_types": [
+      "code_assets/code"
+    ],
+    "extensions": {
+      "code_assets": {
+        "android": {
+          "target_ndk_api": 24
+        },
+        "c_compiler": {
+          "ar": "/Users/jakaria/Library/Android/sdk/ndk/29.0.14206865/toolchains/llvm/prebuilt/darwin-x86_64/bin/llvm-ar",
+          "cc": "/Users/jakaria/Library/Android/sdk/ndk/29.0.14206865/toolchains/llvm/prebuilt/darwin-x86_64/bin/clang",
+          "ld": "/Users/jakaria/Library/Android/sdk/ndk/29.0.14206865/toolchains/llvm/prebuilt/darwin-x86_64/bin/ld.lld"
+        },
+        "link_mode_preference": "dynamic",
+        "target_architecture": "arm64",
+        "target_os": "android"
+      }
+    },
+    "linking_enabled": false
+  },
+  "out_dir_shared": "/Users/jakaria/StudioProjects/evacado_sales_tracker/.dart_tool/hooks_runner/shared/objective_c/build/",
+  "out_file": "/Users/jakaria/StudioProjects/evacado_sales_tracker/.dart_tool/hooks_runner/objective_c/a966a1f9dd16e71418588f7f42846667/output.json",
+  "package_name": "objective_c",
+  "package_root": "/Users/jakaria/.pub-cache/hosted/pub.dev/objective_c-9.2.5/",
+  "user_defines": {}
+}
