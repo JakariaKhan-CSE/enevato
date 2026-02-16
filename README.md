@@ -1,6 +1,18 @@
 # myenvato
 
 A new Flutter project.
+This Apps have sign in key which located on key directory
+
+This app is ready for publish on play store
+All required files have this project
+
+key.properties
+
+storePassword=123456
+keyPassword=123456
+keyAlias=upload
+storeFile=/Users/jakaria/StudioProjects/evacado_sales_tracker/key/upload-keystore.jks
+
 
 ## Getting Started
 
